@@ -5,22 +5,38 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"io"
 	// "math/rands" // to make username+random number
 )
 
+type Request struct {
+	Client *User
+	ChannelName string 
+}
+
 type User struct {
-	username string
-	nickname string
-	password string
-	channel  ChatChannel
+	Username string
+	Nickname string
+	Password string
+	Channel  ChatChannel
 }
 
 type ChatServer struct {
+	AddUser 	chan	User
+	AddNick 	chan	User
+	RemoveNick chan 	User
+
 }
 
 type ChatChannel struct {
 	Name  string
 	Users map[string]User
+
+}
+
+type Message struct {
+	UserClient string // which could be Userclient User
+	UserMessage string
 }
 
 func main() {
@@ -44,9 +60,26 @@ func handleconn(conn net.Conn) {
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
 	// }
-	scanner := bufio.NewScanner(conn) //reads user input
-	for scanner.Scan() {              //loops through as long as it takes
-		ln := scanner.Text()                           //parses the input to ln
+
+	io.WriteString(conn, "Enter your Username: ")
+	scanner := bufio.NewScanner(conn) 
+	scanner.Scan()
+	Uname := scanner.Text()
+	fmt.Println(Uname)// need to store this in my database
+	fmt.Fprintf(conn, "Your Username is %s\n", Uname)
+	io.WriteString(conn, "Enter your Nickname\nPlease note you can change this at any time\nNickname:")
+	scanner = bufio.NewScanner(conn) 
+	scanner.Scan()
+	Nname := scanner.Text()
+	fmt.Println(Nname)
+	fmt.Fprintf(conn, "You Are Welcome to Frozen IRC Server %s\n", Nname)
+
+
+
+
+	scanner1 := bufio.NewScanner(conn) //reads user input
+	for scanner1.Scan() {              //loops through as long as it takes
+		ln := scanner1.Text()                           //parses the input to ln
 		fmt.Println(ln)                                //displays on the server
 		fmt.Fprintf(conn, "I heard you say: %s\n", ln) //displays on the conn client
 	}
