@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	// "math/rands" // to make username+random number
 )
 
 type User struct {
