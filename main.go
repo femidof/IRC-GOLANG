@@ -32,7 +32,7 @@ type ChatChannel struct {
 }
 
 type ChatServer struct {
-	Users []User
+	// Users []User
 	Channels []ChatChannel
 }
 
@@ -75,6 +75,8 @@ func handleconn(conn net.Conn, tinder ChatUsers) {
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
 	// }
+	// var chatserver ChatServer
+	// chatserver.Channels := channels{ Name: West ,Description: Westwingers , Users: "Femi","Victoria"}
 	fmt.Fprintf(conn, "NOTICE AUTH :*** Looking up your hostname...\nNOTICE AUTH :*** Found your hostname, welcome back\nNOTICE AUTH :*** Checking ident\nNOTICE AUTH :*** No identd (auth) response\n") //displays on the conn client
 	
 	var Uname , Nname, pass string
@@ -256,6 +258,12 @@ here:
 					time.Sleep(10 * time.Second)
 					goto here;
 				}
+				if len(fs) == 2 {
+
+				} else {
+					fmt.Fprintln(conn, "Ambiguous Value")
+				}
+
 			case  "LIST":
 				if auth == 0 {
 					time.Sleep(10 * time.Second)
