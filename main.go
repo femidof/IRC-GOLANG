@@ -301,5 +301,5 @@ here:
 	}
 	defer conn.Close()
 
-	fmt.Println("Code Got To The Termination")
+	fmt.Println(Uname, "Code Got To The Termination", "Or Exited")
 }
