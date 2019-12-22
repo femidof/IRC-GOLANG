@@ -28,12 +28,12 @@ type User struct {
 type ChatChannel struct {
 	Name string
 	Description string
-	Users []User
+	Users map[string]User
 }
 
 type ChatServer struct {
 	// Users []User
-	Channels []ChatChannel
+	Channels map[string]ChatChannel
 }
 
 type ChatUsers struct {
@@ -75,14 +75,26 @@ func handleconn(conn net.Conn, tinder ChatUsers) {
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
 	// }
+	// ch1 := ChatChannel{Name: "Welcome", Description: "Welcoming you to Frozen Server", Users: ""}
 	// var chatserver ChatServer
-	// chatserver.Channels := channels{ Name: West ,Description: Westwingers , Users: "Femi","Victoria"}
+	// chatserver.Channels.Name := channels{ Name: West ,Description: Westwingers , Users: "Femi","Victoria"}
 	fmt.Fprintf(conn, "NOTICE AUTH :*** Looking up your hostname...\nNOTICE AUTH :*** Found your hostname, welcome back\nNOTICE AUTH :*** Checking ident\nNOTICE AUTH :*** No identd (auth) response\n") //displays on the conn client
 	
 	var Uname , Nname, pass string
 	fmt.Println(Uname)// need to store this in my database
 	
+	// use new to create channel struct pointer!
+	ch := new(ChatChannel)
+	ch.Name = "room1"
+	fmt.Println(ch)
 
+	serverNew := new(ChatServer)
+	serverNew.Channels = make(map[string]ChatChannel)
+	serverNew.Channels["r1"] = *ch
+	
+	for key, value := range serverNew.Channels {
+		fmt.Println("chatroom name = ", key, "channel struct", value)
+	}
 
 
 
