@@ -15,12 +15,15 @@ import (
 // 	Client *User
 // 	ChannelName string 
 // }
+var Users []User
+var conn net.Conn
 
 type User struct {
 	Username string
 	Nickname string
 	Password string
 	Status 	int 
+	// conn 	net.Conn
 	// Channel  ChatChannel
 }
 
@@ -35,7 +38,6 @@ type ChatServer struct {
 	// Users []User
 	Channels [] ChatChannel
 }
-
 type ChatUsers struct {
 	Name  string
 	Users [] User
@@ -348,32 +350,28 @@ here:
 				// Check if the Channel Exists
 				fmt.Println("fs[1] = |", fs[1], "|")
 				
-				for _, thisChannel := range server1.Channels{
-					fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
-					if thisChannel.Name == fs[1]{
-						for _, name := range thisChannel.Users {
-							fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
-						}
-					}
-				}
-				// for i:=0;i < len(server1.Channels); i++ {
-				// 	//checking if the server exists
-				// 	if server1.Channels[i].Name == fs[1] {
-				// 	//printing out all the servers
-				// 		userArry := server1.Channels[i].Users
-				// 		for _, name := range userArry {
-				// 			fmt.Println("user name = ", name)
+				// for _, thisChannel := range server1.Channels{
+				// 	fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
+				// 	if thisChannel.Name == fs[1]{
+				// 		for _, name := range thisChannel.Users {
+				// 			fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
 				// 		}
-				// 	// for j:=0; j<len(); j++ {
-
-				// 	// }
-				// 	} else {
-				// 		//Server Doesnot Exist
-				// 	fmt.Fprintln(conn,"Channel You Currently Looking does not Exist")
-						
 				// 	}
-				// 	fmt.Fprintln(conn,server1.Channels[i])
 				// }
+				for i:=0;i < len(server1.Channels); i++ {
+					//checking if the server exists
+					if server1.Channels[i].Name == fs[1] {
+					//printing out all the servers
+						for j:=0; j<len(server1.Channels); j++ {
+							fmt.Println("Nickname = ", server1.Channels[i].Users[j].Username)
+						}
+					} else {
+						//Server Doesnot Exist
+					fmt.Fprintln(conn,"Channel You Currently Looking does not Exist")
+						goto here;
+					}
+					// fmt.Fprintln(conn, server1.Channels[i])
+				}
 			} else {
 				fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
 			}
@@ -388,7 +386,11 @@ here:
 				fmt.Fprintln(conn, "Ambiguous Value")
 				goto here;
 			}
-
+			for i:=0;i < len(server1.Channels); i++ {
+					if fs[1] == server1.Channels[i].Name{
+						// I have found my conn username
+					}
+			}
 		case  "PART":
 			if auth == 0 {
 				time.Sleep(3 * time.Second)
