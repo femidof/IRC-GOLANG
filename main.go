@@ -8,14 +8,13 @@ import (
 	"io"
 	"strings"
 	"time"
-	// "sync"
 	// "math/rands" // to make username+random number
 )
 
-type Request struct {
-	Client *User
-	ChannelName string 
-}
+// type Request struct {
+// 	Client *User
+// 	ChannelName string 
+// }
 
 type User struct {
 	Username string
@@ -23,7 +22,6 @@ type User struct {
 	Password string
 	Status 	int 
 	// Channel  ChatChannel
-	Mess chan Message
 }
 
 	// var Users []User
@@ -34,83 +32,54 @@ type ChatChannel struct {
 }
 
 type ChatServer struct {
-		
-		AddUsr     chan User
-		AddNick    chan User
-		RemoveNick chan User
-		NickMap    map[string]User
-		Users      map[string]User
-		Rooms      map[string]ChatChannel
-		Create     chan ChatChannel
-		Delete     chan ChatChannel
-		UsrJoin    chan Request
-		UsrLeave   chan Request
+	// Users []User
+	Channels [] ChatChannel
 }
 
 type ChatUsers struct {
 	Name  string
-	Users []User
+	Users [] User
 
 }
 
-type Message struct {
-	UserClient string // which could be Userclient User
-	UserMessage string
-}
+// type Message struct {
+// 	UserClient string // which could be Userclient User
+// 	UserMessage string
+// }
 
 func main() {
 	// var wg sync.WaitGroup
 
-	// usr1 := User{"Femi", "Fem", "0000", 0}
-	// usr2 := User{"Victoria", "Ria", "1234", 0}
-	// tinder := ChatUsers{Name: "Tinder"}	//Chat Users
+	usr1 := User{"Femi", "Fem", "0000", 0}
+	usr2 := User{"Victoria", "Ria", "1234", 0}
+	tinder := ChatUsers{Name: "Tinder"}	//Chat Users
 
-	// channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
-
-
-
-	chatServer := &ChatServer{
-		AddUsr:     make(chan User),
-		AddNick:    make(chan User),
-		RemoveNick: make(chan User),
-		NickMap:    make(map[string]User),
-		Users:      make(map[string]User),
-		Rooms:      make(map[string]ChatChannel),
-		Create:     make(chan ChatChannel),
-		Delete:     make(chan ChatChannel),
-		UsrJoin:    make(chan Request),
-		UsrLeave:   make(chan Request),
-	}
+	channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
 
 	
-	// server1 := ChatServer{}
-	// server1.Channels = append(server1.Channels, channel1)
+	server1 := ChatServer{}
+	server1.Channels = append(server1.Channels, channel1)
 
-	// tinder.Users = append(tinder.Users, usr1)
-	// tinder.Users = append(tinder.Users, usr2)
-	// fmt.Println(tinder.Users)
+	tinder.Users = append(tinder.Users, usr1)
+	tinder.Users = append(tinder.Users, usr2)
+	fmt.Println(tinder.Users)
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Panic(err)
 	}
 	defer ln.Close()
 	
-	go chatServer.Run()
-	go chatServer.Run()
-	go chatServer.Run()
-	go chatServer.Run()
-
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Println(err)
 		}
-		go handleconn(conn, chatServer)
+		go handleconn(conn, tinder, server1)
 	}
 	
 }
 
-func handleconn(conn net.Conn,chatServer *ChatServer) {
+func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
 	// err := conn.SetDeadline(time.Now().Add(20 * time.Second)) //Set up a timeout
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
@@ -150,8 +119,8 @@ func handleconn(conn net.Conn,chatServer *ChatServer) {
 	// 	ln := scanner1.Text()                           //parses the input to ln
 	// 	fmt.Println(ln)                                //displays on the server
 	// 	fmt.Fprintf(conn, "I heard you say: %s\n", ln) //displays on the conn client
-	// auth := 0
-var uuser User
+	auth := 0
+
 here:
 			// instructions
 		io.WriteString(conn, "\r\nBasic Input Instructions\r\n\r\n"+
@@ -242,87 +211,75 @@ here:
 			// 	}
 				
 				
-			case  "PASS":
-				if len(fs) != 3 && fs[2] != "USER" && fs[1] != "NICK" {
-					fmt.Fprintln(conn, "Ambiguous Value")
-					break
-				}
-				io.WriteString(conn, "Enter your Username: ")
-				scanner := bufio.NewScanner(conn) 
-				scanner.Scan()
-				Uname = scanner.Text()	// Username
-				
-				io.WriteString(conn, "Enter your Nickname: ")
-				scanner = bufio.NewScanner(conn) 
-				scanner.Scan()
-				Nname = scanner.Text()
-
-				io.WriteString(conn, "Enter your Password: ")
-				scanner = bufio.NewScanner(conn) 
-				scanner.Scan()
-				pass = scanner.Text()
-
-				// for i:=0; i < len(chatServer.Users); i++  {
-				// 	if	chatServer.Users[i].Users.Username == Uname {
-				// 		fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
-				// 		if tinder.Users[i].Password == pass {
-				// 			fmt.Fprintln(conn,"Welcome Back")
-				// 			currentUserID = i
-				// 			tinder.Users[i].Status = 1
-				// 			tinder.Users[i].Nickname = Nname
-				// 			auth+=1
-				// 			time.Sleep(3 * time.Second)
-		
-				// 			goto here;
-				// 		}
-				if tmp, test := chatServer.Users[name]; test {
-					user = tmp
-			
-					io.WriteString(conn, "Enter your Password: ")
-					scanner.Scan()
-					pass := scanner.Text()
-					if pass == user.Pw {
-						io.WriteString(conn, "try again:\n")
-						
-					}
-			
-				} else {
-							fmt.Fprintln(conn,"Password Incorrect")
-							auth =0
-							time.Sleep(3 * time.Second)
-			
-							goto here;
-						}
-						
-					}				
-				}
-				fmt.Fprintln(conn,"Creating Username: ", Uname)
-				new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1}
-				tinder.Users = append(tinder.Users, new_user)
-				auth+=1
-				currentUserID = len(tinder.Users) - 1
-
-			case  "NICK":
-				if auth == 0 {
-					fmt.Fprintln(conn,"You are currently not logged In")
-					time.Sleep(3 * time.Second)
-					wg.Done()
-					goto here;
-				}
-				if len(fs) == 2 {
-					for i:=0; i < len(tinder.Users); i++ {
-						if tinder.Users[i].Username == Uname {
-							tinder.Users[i].Nickname = fs[1]
-							Nname = fs[1]
-							fmt.Fprintln(conn, "Nickname Changed To ", Nname)
-							break
-						}
-					}
-				} else {
-					fmt.Fprintln(conn, "Ambiguous Value")
-					fmt.Fprintln(conn, "Nickname not changed")
+		case  "PASS":
+			if len(fs) != 3 && fs[2] != "USER" && fs[1] != "NICK" {
+				fmt.Fprintln(conn, "Ambiguous Value")
+				break
 			}
-			case  "JOIN": //JOIN #channel
+			io.WriteString(conn, "Enter your Username: ")
+			scanner := bufio.NewScanner(conn) 
+			scanner.Scan()
+			Uname = scanner.Text()	// Username
+			
+			io.WriteString(conn, "Enter your Nickname: ")
+			scanner = bufio.NewScanner(conn) 
+			scanner.Scan()
+			Nname = scanner.Text()
+
+			io.WriteString(conn, "Enter your Password: ")
+			scanner = bufio.NewScanner(conn) 
+			scanner.Scan()
+			pass = scanner.Text()
+
+			for i:=0; i < len(tinder.Users); i++  {
+				if	tinder.Users[i].Username == Uname {
+					fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
+					if tinder.Users[i].Password == pass {
+						fmt.Fprintln(conn,"Welcome Back")
+						currentUserID = i
+						tinder.Users[i].Status = 1
+						tinder.Users[i].Nickname = Nname
+						auth+=1
+						time.Sleep(3 * time.Second)
+	
+						goto here;
+					} else {
+						fmt.Fprintln(conn,"Password Incorrect")
+						auth =0
+						time.Sleep(3 * time.Second)
+		
+						goto here;
+					}
+					
+				}				
+			}
+			fmt.Fprintln(conn,"Creating Username: ", Uname)
+			new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1}
+			tinder.Users = append(tinder.Users, new_user)
+			auth+=1
+			currentUserID = len(tinder.Users) - 1
+
+		case  "NICK":
+			if auth == 0 {
+				fmt.Fprintln(conn,"You are currently not logged In")
+				time.Sleep(3 * time.Second)
+	
+				goto here;
+			}
+			if len(fs) == 2 {
+				for i:=0; i < len(tinder.Users); i++ {
+					if tinder.Users[i].Username == Uname {
+						tinder.Users[i].Nickname = fs[1]
+						Nname = fs[1]
+						fmt.Fprintln(conn, "Nickname Changed To ", Nname)
+						break
+					}
+				}
+			} else {
+				fmt.Fprintln(conn, "Ambiguous Value")
+				fmt.Fprintln(conn, "Nickname not changed")
+		}
+		case  "JOIN": //JOIN #channel
 				if auth == 0 {
 					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
 					time.Sleep(3 * time.Second)
@@ -354,142 +311,106 @@ here:
 				}
 
 			case  "LIST": // LIST <#channel>
-				if auth == 0 {                                
-					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
-					time.Sleep(10 * time.Second)
-					goto here;
+			if auth == 0 {                                
+				fmt.Fprintln(conn, "Please connect using PASS NICK USER")
+				time.Sleep(3 * time.Second)
+				goto here;
+			}
+			if len(fs) == 2 || len(fs) == 1 {
+				for i:=0;i < len(server1.Channels); i++ {
+					//printing out all the servers
+					fmt.Fprintln(conn,server1.Channels[i])
 				}
-				if len(fs) == 2 || len(fs) == 1 {
-					for i:=0;i < len(server1.Channels); i++ {
-						//printing out all the servers
-						fmt.Fprintln(conn,server1.Channels[i])
-					}
-				} else {
-					fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
-				}
+			} else {
+				fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
+			}
 
-			case  "NAMES":
-				if auth == 0 {
-					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
-					time.Sleep(10 * time.Second)
-					goto here;
-				}
-				if len(fs) == 1 {
-					fmt.Fprintln(conn, "Listing All The Users Present On the Server")
-					// Checking for all the users on the server .... ChatUser
-					for i:=0;i < len(tinder.Users); i++ {
-						//printing out all the servers
-						fmt.Fprintln(conn, tinder.Users[i].Username)
-						
-					}
-					time.Sleep(3*time.Second)
-					goto here;
-				}
-				if len(fs) == 2 {
-					// Checking for all the Users in the Channel
-					fmt.Fprintln(conn, "Listing all the User(NICK) presently on the Channel Specified ", fs[1])
-					// Check if the Channel Exists
-					fmt.Println("fs[1] = |", fs[1], "|")
+		case  "NAMES":
+			if auth == 0 {
+				fmt.Fprintln(conn, "Please connect using PASS NICK USER")
+				time.Sleep(3 * time.Second)
+				goto here;
+			}
+			if len(fs) == 1 {
+				fmt.Fprintln(conn, "Listing All The Users Present On the Server")
+				// Checking for all the users on the server .... ChatUser
+				for i:=0;i < len(tinder.Users); i++ {
+					//printing out all the servers
+					fmt.Fprintln(conn, tinder.Users[i].Username)
 					
-					for _, thisChannel := range server1.Channels{
-						fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
-						if thisChannel.Name == fs[1]{
-							for _, name := range thisChannel.Users {
-								fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
-							}
+				}
+				time.Sleep(3*time.Second)
+				goto here;
+			}
+			if len(fs) == 2 {
+				// Checking for all the Users in the Channel
+				fmt.Fprintln(conn, "Listing all the User(NICK) presently on the Channel Specified ", fs[1])
+				// Check if the Channel Exists
+				fmt.Println("fs[1] = |", fs[1], "|")
+				
+				for _, thisChannel := range server1.Channels{
+					fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
+					if thisChannel.Name == fs[1]{
+						for _, name := range thisChannel.Users {
+							fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
 						}
 					}
-					// for i:=0;i < len(server1.Channels); i++ {
-					// 	//checking if the server exists
-					// 	if server1.Channels[i].Name == fs[1] {
-					// 	//printing out all the servers
-					// 		userArry := server1.Channels[i].Users
-					// 		for _, name := range userArry {
-					// 			fmt.Println("user name = ", name)
-					// 		}
-					// 	// for j:=0; j<len(); j++ {
-
-					// 	// }
-					// 	} else {
-					// 		//Server Doesnot Exist
-					// 	fmt.Fprintln(conn,"Channel You Currently Looking does not Exist")
-							
-					// 	}
-					// 	fmt.Fprintln(conn,server1.Channels[i])
-					// }
-				} else {
-					fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
 				}
-			case  "PRIVMSG":
-				if auth == 0 {
-					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
-					time.Sleep(10 * time.Second)
-					wg.Done()
-					goto here;
-				}
-			case  "PART":
-				if auth == 0 {
-					time.Sleep(10 * time.Second)
-					wg.Done()
-					goto here;
-				}
+				// for i:=0;i < len(server1.Channels); i++ {
+				// 	//checking if the server exists
+				// 	if server1.Channels[i].Name == fs[1] {
+				// 	//printing out all the servers
+				// 		userArry := server1.Channels[i].Users
+				// 		for _, name := range userArry {
+				// 			fmt.Println("user name = ", name)
+				// 		}
+				// 	// for j:=0; j<len(); j++ {
 
-			default:
-				fmt.Fprintln(conn, "INVALID COMMAND "+fs[0]+"\r\n")
-				continue
-			}
-
-
-
-
-
-
-
-
-
-	}
-	defer conn.Close()
-
-	fmt.Println(Uname, "Code Got To The Termination", "Or Exited")
-}
-func (cs *ChatServer) Run() {
-	for {
-		select {
-		case user := <-cs.RemoveNick:
-			delete(cs.NickMap, user.Nick)
-		case user := <-cs.AddNick:
-			cs.NickMap[user.Nick] = user
-		case user := <-cs.AddUsr:
-			cs.Users[user.UName] = user
-			cs.NickMap[user.Nick] = user
-		case chatRoom := <-cs.Create:
-			cs.Rooms[chatRoom.Name] = chatRoom
-			go chatRoom.Run()
-			go chatRoom.Run()
-			go chatRoom.Run()
-			go chatRoom.Run()
-		case chatRoom := <-cs.Delete:
-			delete(cs.Rooms, chatRoom.Name)
-		case request := <-cs.UsrJoin:
-			if chatRoom, test := cs.Rooms[request.RoomName]; test {
-				chatRoom.Join <- *(request.Person)
-				request.Person.CurrentChatRoom = chatRoom
+				// 	// }
+				// 	} else {
+				// 		//Server Doesnot Exist
+				// 	fmt.Fprintln(conn,"Channel You Currently Looking does not Exist")
+						
+				// 	}
+				// 	fmt.Fprintln(conn,server1.Channels[i])
+				// }
 			} else {
-				chatRoome := ChatRoom{
-					Name:  request.RoomName,
-					Users: make(map[string]User),
-					Join:  make(chan User),
-					Leave: make(chan User),
-					Input: make(chan Message),
-				}
-				cs.Rooms[chatRoome.Name] = chatRoome
-				cs.Create <- chatRoome
-				chatRoome.Join <- *(request.Person)
-				request.Person.CurrentChatRoom = chatRoome
+				fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
 			}
-		case request := <-cs.UsrLeave:
-			room := cs.Rooms[request.RoomName]
-			room.Leave <- *(request.Person)
+		case  "PRIVMSG":
+			if auth == 0 {
+				fmt.Fprintln(conn, "Please connect using PASS NICK USER")
+				time.Sleep(4 * time.Second)
+	
+				goto here;
+			}
+			if len(fs) != 2 {
+				fmt.Fprintln(conn, "Ambiguous Value")
+				goto here;
+			}
+
+		case  "PART":
+			if auth == 0 {
+				time.Sleep(3 * time.Second)
+		
+				goto here;
+			}
+
+		default:
+			fmt.Fprintln(conn, "INVALID COMMAND "+fs[0]+"\r\n")
+			continue
 		}
-	}
+
+
+
+
+
+
+
+
+
+}
+defer conn.Close()
+
+fmt.Println(Uname, "Code Got To The Termination", "Or Exited")
 }
