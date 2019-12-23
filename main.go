@@ -8,13 +8,14 @@ import (
 	"io"
 	"strings"
 	"time"
+	// "sync"
 	// "math/rands" // to make username+random number
 )
 
-// type Request struct {
-// 	Client *User
-// 	ChannelName string 
-// }
+type Request struct {
+	Client *User
+	ChannelName string 
+}
 
 type User struct {
 	Username string
@@ -28,12 +29,21 @@ type User struct {
 type ChatChannel struct {
 	Name string
 	Description string
-	Users map[string]User
+	Users []User
 }
 
 type ChatServer struct {
-	// Users []User
-	Channels map[string]ChatChannel
+		
+		AddUsr     chan User
+		AddNick    chan User
+		RemoveNick chan User
+		NickMap    map[string]User
+		Users      map[string]User
+		Rooms      map[string]ChatChannel
+		Create     chan ChatChannel
+		Delete     chan ChatChannel
+		UsrJoin    chan Request
+		UsrLeave   chan Request
 }
 
 type ChatUsers struct {
@@ -48,9 +58,32 @@ type ChatUsers struct {
 // }
 
 func main() {
+	// var wg sync.WaitGroup
+
 	usr1 := User{"Femi", "Fem", "0000", 0}
 	usr2 := User{"Victoria", "Ria", "1234", 0}
-	tinder := ChatUsers{Name: "Tinder"}
+	tinder := ChatUsers{Name: "Tinder"}	//Chat Users
+
+	channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
+
+
+
+	chatServer := &ChatServer{
+		AddUsr:     make(chan User)
+		AddNick:    make(chan User)
+		RemoveNick: make(chan User)
+		NickMap:    make(map[string]User)
+		Users:      make(map[string]User)
+		Rooms:      make(map[string]ChatRoom)
+		Create:     make(chan ChatRoom)
+		Delete:     make(chan ChatRoom)
+		UsrJoin:    make(chan Request)
+		UsrLeave:   make(chan Request)
+	}
+
+	
+	server1 := ChatServer{}
+	server1.Channels = append(server1.Channels, channel1)
 
 	tinder.Users = append(tinder.Users, usr1)
 	tinder.Users = append(tinder.Users, usr2)
@@ -66,11 +99,12 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		go handleconn(conn, tinder)
+		go handleconn(conn, tinder, server1)
 	}
+	
 }
 
-func handleconn(conn net.Conn, tinder ChatUsers) {
+func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
 	// err := conn.SetDeadline(time.Now().Add(20 * time.Second)) //Set up a timeout
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
@@ -84,17 +118,17 @@ func handleconn(conn net.Conn, tinder ChatUsers) {
 	fmt.Println(Uname)// need to store this in my database
 	
 	// use new to create channel struct pointer!
-	ch := new(ChatChannel)
-	ch.Name = "room1"
-	fmt.Println(ch)
+	// ch := new(ChatChannel)
+	// ch.Name = "room1"
+	// fmt.Println(ch)
 
-	serverNew := new(ChatServer)
-	serverNew.Channels = make(map[string]ChatChannel)
-	serverNew.Channels["r1"] = *ch
+	// serverNew := new(ChatServer)
+	// serverNew.Channels = make(map[string]ChatChannel)
+	// serverNew.Channels["r1"] = *ch
 	
-	for key, value := range serverNew.Channels {
-		fmt.Println("chatroom name = ", key, "channel struct", value)
-	}
+	// for key, value := range serverNew.Channels {
+	// 	fmt.Println("chatroom name = ", key, "channel struct", value)
+	// }
 
 
 
@@ -121,14 +155,15 @@ here:
 		"\tUSER <username> \r\n"+				//Sets the username
 		"\tJOIN <#channel> \r\n"+				//Creates a channel if not exist, and if exists, join 
 		"\tPART <#channel> \r\n"+				//Makes user leaves a channel
-		"\tNAMES <#channel> \r\n"+				//lists all the Nicknames of users in a server
+		"\tNAMES <#channel> \r\n"+				//lists all the Nicknames of users on a Channel 
+		"\tNAMES \r\n"+				//lists all the Nicknames of users in a server		
 		"\tLIST <#channel> \r\n"+				//lists all channel or current status of channel
 		"\tPRIVMSG <nickname>/<channel> \r\n\r\n\r\n\r\n")	//sends a message to another user or channel 
 
 	
 
 
-
+		var currentUserID int
 
 
 		// master := 0
@@ -226,16 +261,18 @@ here:
 						fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
 						if tinder.Users[i].Password == pass {
 							fmt.Fprintln(conn,"Welcome Back")
+							currentUserID = i
 							tinder.Users[i].Status = 1
 							tinder.Users[i].Nickname = Nname
 							auth+=1
-							time.Sleep(10 * time.Second)
-
+							time.Sleep(3 * time.Second)
+		
 							goto here;
 						} else {
 							fmt.Fprintln(conn,"Password Incorrect")
 							auth =0
-							time.Sleep(10 * time.Second)
+							time.Sleep(3 * time.Second)
+			
 							goto here;
 						}
 						
@@ -245,11 +282,13 @@ here:
 				new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1}
 				tinder.Users = append(tinder.Users, new_user)
 				auth+=1
+				currentUserID = len(tinder.Users) - 1
 
 			case  "NICK":
 				if auth == 0 {
 					fmt.Fprintln(conn,"You are currently not logged In")
-					time.Sleep(10 * time.Second)
+					time.Sleep(3 * time.Second)
+					wg.Done()
 					goto here;
 				}
 				if len(fs) == 2 {
@@ -265,35 +304,115 @@ here:
 					fmt.Fprintln(conn, "Ambiguous Value")
 					fmt.Fprintln(conn, "Nickname not changed")
 			}
-			case  "JOIN":
+			case  "JOIN": //JOIN #channel
 				if auth == 0 {
-					time.Sleep(10 * time.Second)
+					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
+					time.Sleep(3 * time.Second)
 					goto here;
 				}
 				if len(fs) == 2 {
+					//loop thru list of channels and see is fs(1) == channel
+					for i:=0; i < len(server1.Channels); i++ {
+						if server1.Channels[i].Name == fs[1]{
+							//append user to channel
+							// charan thoughts: u have Uname a string. loop thru users in tinder, if tinder.Users[i].Name == Uname, 
+							server1.Channels[i].Users = append(server1.Channels[i].Users, tinder.Users[currentUserID])
+							
+							fmt.Fprintln(conn, "Joined the Channel", fs[1])
+							goto here;
+						} 
+					}
+					//else, create chatChannel with given name, append user && append chatChannel to chatServer
+					fmt.Fprintln(conn, "NOT a Current Channel")
 
+					channel1 := ChatChannel{Name: fs[1], Description: "first"}
+					server1.Channels = append(server1.Channels, channel1)
+					server1.Channels[len(server1.Channels) - 1].Users = append(server1.Channels[len(server1.Channels) - 1].Users, tinder.Users[currentUserID])
+					fmt.Fprintln(conn, "Channel Created\nJoined the Channel", fs[1])
+
+					// server1.Channels[len(server1.Channels) - 1].ChatServer = append(server1.Channels[len(server1.Channels) - 1].Users, channel2)
 				} else {
 					fmt.Fprintln(conn, "Ambiguous Value")
 				}
 
-			case  "LIST":
-				if auth == 0 {
+			case  "LIST": // LIST <#channel>
+				if auth == 0 {                                
+					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
 					time.Sleep(10 * time.Second)
 					goto here;
 				}
+				if len(fs) == 2 || len(fs) == 1 {
+					for i:=0;i < len(server1.Channels); i++ {
+						//printing out all the servers
+						fmt.Fprintln(conn,server1.Channels[i])
+					}
+				} else {
+					fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
+				}
+
 			case  "NAMES":
 				if auth == 0 {
+					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
 					time.Sleep(10 * time.Second)
 					goto here;
+				}
+				if len(fs) == 1 {
+					fmt.Fprintln(conn, "Listing All The Users Present On the Server")
+					// Checking for all the users on the server .... ChatUser
+					for i:=0;i < len(tinder.Users); i++ {
+						//printing out all the servers
+						fmt.Fprintln(conn, tinder.Users[i].Username)
+						
+					}
+					time.Sleep(3*time.Second)
+					goto here;
+				}
+				if len(fs) == 2 {
+					// Checking for all the Users in the Channel
+					fmt.Fprintln(conn, "Listing all the User(NICK) presently on the Channel Specified ", fs[1])
+					// Check if the Channel Exists
+					fmt.Println("fs[1] = |", fs[1], "|")
+					
+					for _, thisChannel := range server1.Channels{
+						fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
+						if thisChannel.Name == fs[1]{
+							for _, name := range thisChannel.Users {
+								fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
+							}
+						}
+					}
+					// for i:=0;i < len(server1.Channels); i++ {
+					// 	//checking if the server exists
+					// 	if server1.Channels[i].Name == fs[1] {
+					// 	//printing out all the servers
+					// 		userArry := server1.Channels[i].Users
+					// 		for _, name := range userArry {
+					// 			fmt.Println("user name = ", name)
+					// 		}
+					// 	// for j:=0; j<len(); j++ {
+
+					// 	// }
+					// 	} else {
+					// 		//Server Doesnot Exist
+					// 	fmt.Fprintln(conn,"Channel You Currently Looking does not Exist")
+							
+					// 	}
+					// 	fmt.Fprintln(conn,server1.Channels[i])
+					// }
+				} else {
+					fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
 				}
 			case  "PRIVMSG":
 				if auth == 0 {
+					fmt.Fprintln(conn, "Please connect using PASS NICK USER")
 					time.Sleep(10 * time.Second)
+					wg.Done()
 					goto here;
 				}
 			case  "PART":
 				if auth == 0 {
 					time.Sleep(10 * time.Second)
+					wg.Done()
 					goto here;
 				}
 
@@ -314,4 +433,45 @@ here:
 	defer conn.Close()
 
 	fmt.Println(Uname, "Code Got To The Termination", "Or Exited")
+}
+func (cs *ChatServer) Run() {
+	for {
+		select {
+		case user := <-cs.RemoveNick:
+			delete(cs.NickMap, user.Nick)
+		case user := <-cs.AddNick:
+			cs.NickMap[user.Nick] = user
+		case user := <-cs.AddUsr:
+			cs.Users[user.UName] = user
+			cs.NickMap[user.Nick] = user
+		case chatRoom := <-cs.Create:
+			cs.Rooms[chatRoom.Name] = chatRoom
+			go chatRoom.Run()
+			go chatRoom.Run()
+			go chatRoom.Run()
+			go chatRoom.Run()
+		case chatRoom := <-cs.Delete:
+			delete(cs.Rooms, chatRoom.Name)
+		case request := <-cs.UsrJoin:
+			if chatRoom, test := cs.Rooms[request.RoomName]; test {
+				chatRoom.Join <- *(request.Person)
+				request.Person.CurrentChatRoom = chatRoom
+			} else {
+				chatRoome := ChatRoom{
+					Name:  request.RoomName,
+					Users: make(map[string]User),
+					Join:  make(chan User),
+					Leave: make(chan User),
+					Input: make(chan Message),
+				}
+				cs.Rooms[chatRoome.Name] = chatRoome
+				cs.Create <- chatRoome
+				chatRoome.Join <- *(request.Person)
+				request.Person.CurrentChatRoom = chatRoome
+			}
+		case request := <-cs.UsrLeave:
+			room := cs.Rooms[request.RoomName]
+			room.Leave <- *(request.Person)
+		}
+	}
 }
