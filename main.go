@@ -23,6 +23,7 @@ type User struct {
 	Password string
 	Status 	int 
 	// Channel  ChatChannel
+	Mess chan Message
 }
 
 	// var Users []User
@@ -52,59 +53,64 @@ type ChatUsers struct {
 
 }
 
-// type Message struct {
-// 	UserClient string // which could be Userclient User
-// 	UserMessage string
-// }
+type Message struct {
+	UserClient string // which could be Userclient User
+	UserMessage string
+}
 
 func main() {
 	// var wg sync.WaitGroup
 
-	usr1 := User{"Femi", "Fem", "0000", 0}
-	usr2 := User{"Victoria", "Ria", "1234", 0}
-	tinder := ChatUsers{Name: "Tinder"}	//Chat Users
+	// usr1 := User{"Femi", "Fem", "0000", 0}
+	// usr2 := User{"Victoria", "Ria", "1234", 0}
+	// tinder := ChatUsers{Name: "Tinder"}	//Chat Users
 
-	channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
+	// channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
 
 
 
 	chatServer := &ChatServer{
-		AddUsr:     make(chan User)
-		AddNick:    make(chan User)
-		RemoveNick: make(chan User)
-		NickMap:    make(map[string]User)
-		Users:      make(map[string]User)
-		Rooms:      make(map[string]ChatRoom)
-		Create:     make(chan ChatRoom)
-		Delete:     make(chan ChatRoom)
-		UsrJoin:    make(chan Request)
-		UsrLeave:   make(chan Request)
+		AddUsr:     make(chan User),
+		AddNick:    make(chan User),
+		RemoveNick: make(chan User),
+		NickMap:    make(map[string]User),
+		Users:      make(map[string]User),
+		Rooms:      make(map[string]ChatChannel),
+		Create:     make(chan ChatChannel),
+		Delete:     make(chan ChatChannel),
+		UsrJoin:    make(chan Request),
+		UsrLeave:   make(chan Request),
 	}
 
 	
-	server1 := ChatServer{}
-	server1.Channels = append(server1.Channels, channel1)
+	// server1 := ChatServer{}
+	// server1.Channels = append(server1.Channels, channel1)
 
-	tinder.Users = append(tinder.Users, usr1)
-	tinder.Users = append(tinder.Users, usr2)
-	fmt.Println(tinder.Users)
+	// tinder.Users = append(tinder.Users, usr1)
+	// tinder.Users = append(tinder.Users, usr2)
+	// fmt.Println(tinder.Users)
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Panic(err)
 	}
 	defer ln.Close()
 	
+	go chatServer.Run()
+	go chatServer.Run()
+	go chatServer.Run()
+	go chatServer.Run()
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Println(err)
 		}
-		go handleconn(conn, tinder, server1)
+		go handleconn(conn, chatServer)
 	}
 	
 }
 
-func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
+func handleconn(conn net.Conn,chatServer *ChatServer) {
 	// err := conn.SetDeadline(time.Now().Add(20 * time.Second)) //Set up a timeout
 	// if err != nil {
 	// 	log.Println("CONNECTION TIMEOUT")
@@ -144,8 +150,8 @@ func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
 	// 	ln := scanner1.Text()                           //parses the input to ln
 	// 	fmt.Println(ln)                                //displays on the server
 	// 	fmt.Fprintf(conn, "I heard you say: %s\n", ln) //displays on the conn client
-	auth := 0
-
+	// auth := 0
+var uuser User
 here:
 			// instructions
 		io.WriteString(conn, "\r\nBasic Input Instructions\r\n\r\n"+
@@ -256,19 +262,31 @@ here:
 				scanner.Scan()
 				pass = scanner.Text()
 
-				for i:=0; i < len(tinder.Users); i++  {
-					if	tinder.Users[i].Username == Uname {
-						fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
-						if tinder.Users[i].Password == pass {
-							fmt.Fprintln(conn,"Welcome Back")
-							currentUserID = i
-							tinder.Users[i].Status = 1
-							tinder.Users[i].Nickname = Nname
-							auth+=1
-							time.Sleep(3 * time.Second)
+				// for i:=0; i < len(chatServer.Users); i++  {
+				// 	if	chatServer.Users[i].Users.Username == Uname {
+				// 		fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
+				// 		if tinder.Users[i].Password == pass {
+				// 			fmt.Fprintln(conn,"Welcome Back")
+				// 			currentUserID = i
+				// 			tinder.Users[i].Status = 1
+				// 			tinder.Users[i].Nickname = Nname
+				// 			auth+=1
+				// 			time.Sleep(3 * time.Second)
 		
-							goto here;
-						} else {
+				// 			goto here;
+				// 		}
+				if tmp, test := chatServer.Users[name]; test {
+					user = tmp
+			
+					io.WriteString(conn, "Enter your Password: ")
+					scanner.Scan()
+					pass := scanner.Text()
+					if pass == user.Pw {
+						io.WriteString(conn, "try again:\n")
+						
+					}
+			
+				} else {
 							fmt.Fprintln(conn,"Password Incorrect")
 							auth =0
 							time.Sleep(3 * time.Second)
