@@ -28,7 +28,7 @@ type User struct {
 	Nickname string
 	Password string
 	Status 	int 
-	//conn 	net.Conn
+	conn 	net.Conn
 	// Channel  ChatChannel
 }
 
@@ -159,14 +159,14 @@ here:
 			scanner.Scan()
 			pass = scanner.Text()
 
-			for i:=0; i < len(tinder.Users); i++  {
-				if	tinder.Users[i].Username == Uname {
+			for i:=0; i < len(Global_Users); i++  {
+				if	Global_Users[i].Username == Uname {
 					fmt.Fprintln(conn,"Username Exists, Checking if Password Matches")
-					if tinder.Users[i].Password == pass {
+					if Global_Users[i].Password == pass {
 						fmt.Fprintln(conn,"Welcome Back")
 						currentUserID = i
-						tinder.Users[i].Status = 1
-						tinder.Users[i].Nickname = Nname
+						Global_Users[i].Status = 1
+						Global_Users[i].Nickname = Nname
 						auth+=1
 						time.Sleep(3 * time.Second)
 	
@@ -182,11 +182,13 @@ here:
 				}				
 			}
 			fmt.Fprintln(conn,"Creating Username: ", Uname)
-			new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1}
+			new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1, conn: conn}
 			Global_Users = append(Global_Users, new_user)
 			tinder.Users = append(tinder.Users, new_user)
 			auth+=1
 			currentUserID = len(tinder.Users) - 1
+			fmt.Println("New User: ", new_user)
+			fmt.Println("Whole Array: ", Global_Users)
 
 		case  "NICK":
 			if auth == 0 {
@@ -196,9 +198,9 @@ here:
 				goto here;
 			}
 			if len(fs) == 2 {
-				for i:=0; i < len(tinder.Users); i++ {
-					if tinder.Users[i].Username == Uname {
-						tinder.Users[i].Nickname = fs[1]
+				for i:=0; i < len(Global_Users); i++ {
+					if Global_Users[i].Username == Uname {
+						Global_Users[i].Nickname = fs[1]
 						Nname = fs[1]
 						fmt.Fprintln(conn, "Nickname Changed To ", Nname)
 						break
@@ -220,7 +222,7 @@ here:
 						if Global_Channel[i].Name == fs[1]{
 							//append user to channel
 							// charan thoughts: u have Uname a string. loop thru users in tinder, if tinder.Users[i].Name == Uname, 
-							Global_Channel[i].Users = append(Global_Channel[i].Users, tinder.Users[currentUserID])
+							Global_Channel[i].Users = append(Global_Channel[i].Users, Global_Users[currentUserID])
 							
 							fmt.Fprintln(conn, "Joined the Channel", fs[1])
 							goto here;
@@ -231,7 +233,7 @@ here:
 
 					channel1 := ChatChannel{Name: fs[1], Description: "first"}
 					Global_Channel = append(Global_Channel, channel1)
-					Global_Channel[len(Global_Channel) - 1].Users = append(Global_Channel[len(Global_Channel) - 1].Users, tinder.Users[currentUserID])
+					Global_Channel[len(Global_Channel) - 1].Users = append(Global_Channel[len(Global_Channel) - 1].Users, Global_Users[currentUserID])
 					fmt.Fprintln(conn, "Channel Created\nJoined the Channel", fs[1])
 
 					// server1.Channels[len(server1.Channels) - 1].ChatServer = append(server1.Channels[len(server1.Channels) - 1].Users, channel2)
@@ -255,6 +257,8 @@ here:
 			}
 
 		case  "NAMES":
+			fmt.Println("NAMES GLOBAL", Global_Users)
+
 			if auth == 0 {
 				fmt.Fprintln(conn, "Please connect using PASS NICK USER")
 				time.Sleep(3 * time.Second)
@@ -276,12 +280,12 @@ here:
 				fmt.Fprintln(conn, "Listing all the User(NICK) presently on the Channel Specified ", fs[1])
 				// Check if the Channel Exists
 				fmt.Println("fs[1] = |", fs[1], "|")
-				for i:=0;i < len(server1.Channels); i++ {
+				for i:=0;i < len(Global_Channel); i++ {
 					//checking if the server exists
-					if server1.Channels[i].Name == fs[1] {
+					if Global_Channel[i].Name == fs[1] {
 					//printing out all the servers
-						for j:=0; j<len(server1.Channels); j++ {
-							fmt.Println("Nickname = ", server1.Channels[i].Users[j].Username)
+						for j:=0; j<len(Global_Channel); j++ {
+							fmt.Println("Nickname = ", Global_Channel[i].Users[j].Username)
 						}
 					} else {
 						//Server Doesnot Exist
