@@ -15,15 +15,20 @@ import (
 // 	Client *User
 // 	ChannelName string 
 // }
-var Users []User
-var conn net.Conn
+var Global_Users []User
+var Global_Channel []ChatChannel
 
+var conn net.Conn
+type Connn struct{
+	conn []net.Conn
+
+}
 type User struct {
 	Username string
 	Nickname string
 	Password string
 	Status 	int 
-	// conn 	net.Conn
+	//conn 	net.Conn
 	// Channel  ChatChannel
 }
 
@@ -52,19 +57,19 @@ type ChatUsers struct {
 func main() {
 	// var wg sync.WaitGroup
 
-	usr1 := User{"Femi", "Fem", "0000", 0}
-	usr2 := User{"Victoria", "Ria", "1234", 0}
+	// usr1 := User{"Femi", "Fem", "0000", 0}
+	// usr2 := User{"Victoria", "Ria", "1234", 0}
 	tinder := ChatUsers{Name: "Tinder"}	//Chat Users
 
 	channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
 
 	
 	server1 := ChatServer{}
-	server1.Channels = append(server1.Channels, channel1)
+	Global_Channel = append(Global_Channel, channel1)
 
-	tinder.Users = append(tinder.Users, usr1)
-	tinder.Users = append(tinder.Users, usr2)
-	fmt.Println(tinder.Users)
+	// tinder.Users = append(tinder.Users, usr1)
+	// tinder.Users = append(tinder.Users, usr2)
+	// fmt.Println(tinder.Users)
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Panic(err)
@@ -82,45 +87,20 @@ func main() {
 }
 
 func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
-	// err := conn.SetDeadline(time.Now().Add(20 * time.Second)) //Set up a timeout
-	// if err != nil {
-	// 	log.Println("CONNECTION TIMEOUT")
+	// for {
+	// fmt.Println("Conn_ID:", conn)
+	// fmt.Fprintf(conn, "Write something: ")
+	// scanner := bufio.NewScanner(conn) 
+	// scanner.Scan()
+	// Nname := scanner.Text()
+	// fmt.Fprintf(conn, Nname)
 	// }
-	// ch1 := ChatChannel{Name: "Welcome", Description: "Welcoming you to Frozen Server", Users: ""}
-	// var chatserver ChatServer
-	// chatserver.Channels.Name := channels{ Name: West ,Description: Westwingers , Users: "Femi","Victoria"}
+
 	fmt.Fprintf(conn, "NOTICE AUTH :*** Looking up your hostname...\nNOTICE AUTH :*** Found your hostname, welcome back\nNOTICE AUTH :*** Checking ident\nNOTICE AUTH :*** No identd (auth) response\n") //displays on the conn client
 	
 	var Uname , Nname, pass string
 	fmt.Println(Uname)// need to store this in my database
-	
-	// use new to create channel struct pointer!
-	// ch := new(ChatChannel)
-	// ch.Name = "room1"
-	// fmt.Println(ch)
 
-	// serverNew := new(ChatServer)
-	// serverNew.Channels = make(map[string]ChatChannel)
-	// serverNew.Channels["r1"] = *ch
-	
-	// for key, value := range serverNew.Channels {
-	// 	fmt.Println("chatroom name = ", key, "channel struct", value)
-	// }
-
-
-
-
-
-
-	
-	// Pass := scanner.Text()
-	
-
-	// scanner1 := bufio.NewScanner(conn) //reads user input ---------------before it enters loop
-	// for scanner1.Scan() {              //loops through as long as it takes
-	// 	ln := scanner1.Text()                           //parses the input to ln
-	// 	fmt.Println(ln)                                //displays on the server
-	// 	fmt.Fprintf(conn, "I heard you say: %s\n", ln) //displays on the conn client
 	auth := 0
 
 here:
@@ -138,7 +118,7 @@ here:
 		"\tPRIVMSG <nickname>/<channel> \r\n\r\n\r\n\r\n")	//sends a message to another user or channel 
 
 	
-
+		//  memc Connn := append()
 
 		var currentUserID int
 
@@ -156,61 +136,7 @@ here:
 				continue
 			}
 			switch fs[0] {
-				//This is to watch how to work with my setting values
-			// case "GET":
-			// 	k := fs[1]
-			// 	v := data[k]
-			// 	fmt.Fprintf(conn, "%s\r\n", v)
-			// case "SET":
-			// 	if len(fs) != 3 {
-			// 		fmt.Fprintln(conn, "EXPECTED VALUE\r")
-			// 		continue
-			// 	}
-			// 	k := fs[1]
-			// 	v := fs[2]
-			// 	data[k] = v
-			// case "DEL":
-			// 	k := fs[1]
-			// 	delete(data, k)
-			// case  "USER":
-			// 	if len(fs) != 2 {
-			// 		fmt.Fprintln(conn, "Ambiguous Value")
-			// 		continue
-			// 	}
-			// 	if master == 0 { 	//To know if User name has been set before
-			// 		io.WriteString(conn, "Enter your new Password: ")	//new User
-			// 		scanner.Scan()
-			// 		pass := scanner.Text()
-			// 		v := fs[1]
-			// 		Uname = v
-			// 		new_user := User{Username: v, Password: pass, Nickname: v, Status:1}
-			// 		tinder.Users = append(tinder.Users, new_user)
-			// 		master += 1
-			// 	} else {
-			// 		// len(tinder.Users[])
-			// 			for i:=0; i < len(tinder.Users); i++  {	// Old User Confirm your pass word
-			// 				if	tinder.Users[i].Username == fs[1] {
-			// 				io.WriteString(conn, "Enter your Old Password: ")	//new User
-			// 				scanner.Scan()
-			// 				pass := scanner.Text()
-			// 				if	tinder.Users[i].Password == pass{
-								
-			// 					fmt.Fprintln(conn,"Welcome Back")
-			// 					Uname = tinder.Users[i].Username
-			// 				} else {
-										
-			// 					fmt.Fprintln(conn,"User still online... Not your account..")
-			// 					conn.Close()
-			// 				}
 
-			// 		 } else {
-			// 			fmt.Fprintln(conn,"User still online... Not your account..")
-			// 			conn.Close()
-			// 		}
-			// 	}
-
-
-			// 	}
 				
 				
 		case  "PASS":
@@ -257,6 +183,7 @@ here:
 			}
 			fmt.Fprintln(conn,"Creating Username: ", Uname)
 			new_user := User{Username: Uname, Password: pass, Nickname: Nname, Status:1}
+			Global_Users = append(Global_Users, new_user)
 			tinder.Users = append(tinder.Users, new_user)
 			auth+=1
 			currentUserID = len(tinder.Users) - 1
@@ -289,11 +216,11 @@ here:
 				}
 				if len(fs) == 2 {
 					//loop thru list of channels and see is fs(1) == channel
-					for i:=0; i < len(server1.Channels); i++ {
-						if server1.Channels[i].Name == fs[1]{
+					for i:=0; i < len(Global_Channel); i++ {
+						if Global_Channel[i].Name == fs[1]{
 							//append user to channel
 							// charan thoughts: u have Uname a string. loop thru users in tinder, if tinder.Users[i].Name == Uname, 
-							server1.Channels[i].Users = append(server1.Channels[i].Users, tinder.Users[currentUserID])
+							Global_Channel[i].Users = append(Global_Channel[i].Users, tinder.Users[currentUserID])
 							
 							fmt.Fprintln(conn, "Joined the Channel", fs[1])
 							goto here;
@@ -303,8 +230,8 @@ here:
 					fmt.Fprintln(conn, "NOT a Current Channel")
 
 					channel1 := ChatChannel{Name: fs[1], Description: "first"}
-					server1.Channels = append(server1.Channels, channel1)
-					server1.Channels[len(server1.Channels) - 1].Users = append(server1.Channels[len(server1.Channels) - 1].Users, tinder.Users[currentUserID])
+					Global_Channel = append(Global_Channel, channel1)
+					Global_Channel[len(Global_Channel) - 1].Users = append(Global_Channel[len(Global_Channel) - 1].Users, tinder.Users[currentUserID])
 					fmt.Fprintln(conn, "Channel Created\nJoined the Channel", fs[1])
 
 					// server1.Channels[len(server1.Channels) - 1].ChatServer = append(server1.Channels[len(server1.Channels) - 1].Users, channel2)
@@ -319,9 +246,9 @@ here:
 				goto here;
 			}
 			if len(fs) == 2 || len(fs) == 1 {
-				for i:=0;i < len(server1.Channels); i++ {
+				for i:=0;i < len(Global_Channel); i++ {
 					//printing out all the servers
-					fmt.Fprintln(conn,server1.Channels[i])
+					fmt.Fprintln(conn,Global_Channel[i].Name)
 				}
 			} else {
 				fmt.Fprintln(conn, "Use the COMMAND <LIST #channel>")
@@ -336,9 +263,9 @@ here:
 			if len(fs) == 1 {
 				fmt.Fprintln(conn, "Listing All The Users Present On the Server")
 				// Checking for all the users on the server .... ChatUser
-				for i:=0;i < len(tinder.Users); i++ {
+				for i:=0;i < len(Global_Users); i++ {
 					//printing out all the servers
-					fmt.Fprintln(conn, tinder.Users[i].Username)
+					fmt.Fprintln(conn, Global_Users[i].Username)
 					
 				}
 				time.Sleep(3*time.Second)
@@ -349,15 +276,6 @@ here:
 				fmt.Fprintln(conn, "Listing all the User(NICK) presently on the Channel Specified ", fs[1])
 				// Check if the Channel Exists
 				fmt.Println("fs[1] = |", fs[1], "|")
-				
-				// for _, thisChannel := range server1.Channels{
-				// 	fmt.Println("thisChannel.Name = |", thisChannel.Name, "|")
-				// 	if thisChannel.Name == fs[1]{
-				// 		for _, name := range thisChannel.Users {
-				// 			fmt.Fprintln(conn,"user Nickname = ", name.Nickname)
-				// 		}
-				// 	}
-				// }
 				for i:=0;i < len(server1.Channels); i++ {
 					//checking if the server exists
 					if server1.Channels[i].Name == fs[1] {
