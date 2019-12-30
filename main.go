@@ -308,9 +308,13 @@ here:
 				fmt.Fprintln(conn, "Ambiguous Value")
 				goto here;
 			}
-			for i:=0;i < len(server1.Channels); i++ {
-					if fs[1] == server1.Channels[i].Name{
-						// I have found my conn username
+			for i:=0;i < len(Global_Users); i++ {
+					if fs[1] == Global_Users[i].Username{
+						io.WriteString(conn, "Write a message: ")
+						scanner := bufio.NewScanner(conn) 
+						scanner.Scan()
+						pass := scanner.Text()
+						fmt.Fprintln(Global_Users[i].conn, fs[1], ":", pass)
 					}
 			}
 		case  "PART":
