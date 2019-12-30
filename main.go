@@ -8,13 +8,9 @@ import (
 	"io"
 	"strings"
 	"time"
-	// "math/rands" // to make username+random number
 )
 
-// type Request struct {
-// 	Client *User
-// 	ChannelName string 
-// }
+
 var Global_Users []User
 var Global_Channel []ChatChannel
 
@@ -29,7 +25,6 @@ type User struct {
 	Password string
 	Status 	int 
 	conn 	net.Conn
-	// Channel  ChatChannel
 }
 
 	// var Users []User
@@ -49,16 +44,7 @@ type ChatUsers struct {
 
 }
 
-// type Message struct {
-// 	UserClient string // which could be Userclient User
-// 	UserMessage string
-// }
-
 func main() {
-	// var wg sync.WaitGroup
-
-	// usr1 := User{"Femi", "Fem", "0000", 0}
-	// usr2 := User{"Victoria", "Ria", "1234", 0}
 	tinder := ChatUsers{Name: "Tinder"}	//Chat Users
 
 	channel1 := ChatChannel{Name: "#Welcome", Description: "first"}
@@ -67,9 +53,7 @@ func main() {
 	server1 := ChatServer{}
 	Global_Channel = append(Global_Channel, channel1)
 
-	// tinder.Users = append(tinder.Users, usr1)
-	// tinder.Users = append(tinder.Users, usr2)
-	// fmt.Println(tinder.Users)
+
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Panic(err)
@@ -87,14 +71,6 @@ func main() {
 }
 
 func handleconn(conn net.Conn, tinder ChatUsers, server1 ChatServer) {
-	// for {
-	// fmt.Println("Conn_ID:", conn)
-	// fmt.Fprintf(conn, "Write something: ")
-	// scanner := bufio.NewScanner(conn) 
-	// scanner.Scan()
-	// Nname := scanner.Text()
-	// fmt.Fprintf(conn, Nname)
-	// }
 
 	fmt.Fprintf(conn, "NOTICE AUTH :*** Looking up your hostname...\nNOTICE AUTH :*** Found your hostname, welcome back\nNOTICE AUTH :*** Checking ident\nNOTICE AUTH :*** No identd (auth) response\n") //displays on the conn client
 	
@@ -107,7 +83,7 @@ here:
 			// instructions
 		io.WriteString(conn, "\r\nBasic Input Instructions\r\n\r\n"+
 		"USE:\r\n"+
-		"\tPASS <NICK> <USER> \r\n"+		//Sets the password of the user
+		"\tPASS NICK USER \r\n"+		//Sets the password of the user
 		"\tNICK <nickname> \r\n"+				//sets the nickname of the user if not set and if set, to be changed
 		"\tUSER <username> \r\n"+				//Sets the username
 		"\tJOIN <#channel> \r\n"+				//Creates a channel if not exist, and if exists, join 
@@ -314,13 +290,34 @@ here:
 						scanner := bufio.NewScanner(conn) 
 						scanner.Scan()
 						pass := scanner.Text()
-						fmt.Fprintln(Global_Users[i].conn, fs[1], ":", pass)
-					}
+						fmt.Fprintln(Global_Users[i].conn, Uname, ":", pass)
+						goto here
+					} 
+					
+			}
+			fmt.Fprintln(conn, "NOT A USER, CHECKING CHANNELS")
+			for i:=0;i < len(Global_Channel); i++ {
+					if fs[1] == Global_Channel[i].Name {
+						io.WriteString(conn, "Write a message: ")
+						scanner := bufio.NewScanner(conn) 
+						scanner.Scan()
+						pass := scanner.Text()
+						
+						for j:=0; j<len(Global_Channel[i].Users); j++{
+							fmt.Fprintln(Global_Channel[i].Users[j].conn,"Channel: ", Global_Channel[i].Name, Uname, ":", pass)
+						}
+						goto here
+					} else {
+					fmt.Fprintln(conn, "NOT A USER AND NOT A CHANNEL")}
 			}
 		case  "PART":
 			if auth == 0 {
 				time.Sleep(3 * time.Second)
 		
+				goto here;
+			}
+			if len(fs) != 2 {
+				fmt.Fprintln(conn, "Ambiguous Value")
 				goto here;
 			}
 
